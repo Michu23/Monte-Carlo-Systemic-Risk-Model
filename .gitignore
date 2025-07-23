@@ -1,0 +1,37 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Results and output directories
+results_*/
+calculated_*.csv
+
+# Generated files
+*.png
+*.csv
+!banks_data.csv
+!traditional_exposure_matrix.csv
+
+# Logs
+*.log
