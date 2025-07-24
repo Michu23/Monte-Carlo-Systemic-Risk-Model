@@ -10,7 +10,7 @@ st.set_page_config(page_title="Systemic Risk Monte Carlo Simulator", layout="wid
 
 # --- Sidebar ---
 st.sidebar.title("Simulation Controls")
-n_sim = st.sidebar.number_input("Number of Simulations", min_value=100, max_value=50000, value=10000, step=100)
+n_sim = st.sidebar.number_input("Number of Simulations", min_value=100, max_value=500000, value=10000, step=100)
 shock_prob = st.sidebar.slider("Initial Shock Probability", min_value=0.001, max_value=0.05, value=0.005, step=0.001, format="%.3f")
 model_type = st.sidebar.radio("Choose Model", options=["Traditional", "Blockchain"])
 if model_type == "Traditional":
@@ -98,7 +98,7 @@ if st.button("Run Simulation"):
 
     # --- Visualizations ---
     st.subheader("Failure Distribution Histogram")
-    fig, ax = plt.subplots(figsize=(8, 4))
+    fig, ax = plt.subplots(figsize=(4, 2.5))
     sns.histplot(results, bins=range(0, n_banks+2), kde=False, ax=ax)
     ax.set_xlabel("Number of Bank Failures")
     ax.set_ylabel("Frequency")
@@ -106,7 +106,7 @@ if st.button("Run Simulation"):
 
     # --- Boxplot ---
     st.subheader("Failures Distribution (Boxplot)")
-    fig2, ax2 = plt.subplots(figsize=(4, 4))
+    fig2, ax2 = plt.subplots()
     sns.boxplot(y=results, ax=ax2)
     ax2.set_ylabel("Number of Failures")
     st.pyplot(fig2)
