@@ -343,6 +343,10 @@ with tab1:
         
         # Visualizations
         st.subheader("📊 Visualizations")
+
+        # Get failure data for visualizations
+        trad_failures = trad_summary['Raw Failures']
+        bc_failures = bc_summary['Raw Failures']
         
         # Create interactive plots with Plotly
         fig = make_subplots(
