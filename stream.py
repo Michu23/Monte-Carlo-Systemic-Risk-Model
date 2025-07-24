@@ -341,23 +341,6 @@ with tab1:
         
         st.dataframe(results_df, use_container_width=True)
         
-        # Statistical significance
-        st.subheader("📈 Statistical Analysis")
-        
-        trad_failures = trad_summary['Raw Failures']
-        bc_failures = bc_summary['Raw Failures']
-        
-        t_stat, p_value = stats.ttest_ind(trad_failures, bc_failures)
-        
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("T-statistic", f"{t_stat:.4f}")
-        with col2:
-            st.metric("P-value", f"{p_value:.6f}")
-        with col3:
-            significance = "Yes" if p_value < 0.05 else "No"
-            st.metric("Statistically Significant", significance)
-        
         # Visualizations
         st.subheader("📊 Visualizations")
         
