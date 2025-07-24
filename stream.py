@@ -6,6 +6,7 @@ import seaborn as sns
 from scipy import stats
 import time
 import plotly.graph_objects as go
+import plotly.express as px
 from plotly.subplots import make_subplots
 
 # Page config
@@ -54,24 +55,20 @@ st.markdown('<div class="sub-header">Traditional vs Blockchain Banking Systems</
 
 # Helper functions
 @st.cache_data
-def load_sample_data():
-    """Create sample bank data if no file is uploaded"""
-    banks = [
-        "Deutsche Bank", "BNP Paribas", "HSBC", "Barclays", "Santander",
-        "UniCredit", "ING Group", "Société Générale", "Credit Agricole", "Commerzbank"
-    ]
-    
-    np.random.seed(42)
-    data = pd.DataFrame({
-        'Bank Name': banks,
-        'Total Assets (€B)': np.random.uniform(500, 2000, 10),
-        'CET1 Ratio (%)': np.random.uniform(12, 18, 10),
-        'Interbank Assets (€B)': np.random.uniform(50, 200, 10),
-        'Interbank Liabilities (€B)': np.random.uniform(40, 180, 10)
-    })
-    
-    data['Capital Buffer (€B)'] = data['CET1 Ratio (%)'] * data['Total Assets (€B)'] * 0.01
-    return data
+def load_bank_data():
+    """Load bank data from banks_data.csv"""
+    try:
+        data = pd.read_csv('banks_data.csv')
+        # Calculate capital buffer if not already in the data
+        if 'Capital Buffer (€B)' not in data.columns:
+            data['Capital Buffer (€B)'] = data['CET1 Ratio (%)'] * data['Total Assets (€B)'] * 0.01
+        return data
+    except FileNotFoundError:
+        st.error("❌ banks_data.csv file not found. Please ensure the file exists in the root directory.")
+        st.stop()
+    except Exception as e:
+        st.error(f"❌ Error loading banks_data.csv: {str(e)}")
+        st.stop()
 
 def build_exposure_matrix(assets, liabilities):
     """Build the interbank exposure matrix"""
@@ -149,7 +146,7 @@ def monte_carlo_sim(data, exposure_matrix, lgd, shock_prob, n_sim=1000, model_ty
         
         # Record results
         n_failures = np.sum(failed)
-        systemic_threshold = st.session_state.get('systemic_threshold', 3)
+        systemic_threshold = 3  # Fixed threshold
         systemic_event = n_failures >= systemic_threshold
         failed_banks = np.where(failed)[0].tolist()
         
@@ -168,43 +165,21 @@ def summarize_results(results):
     failures = [r[0] for r in results]
     systemic_events = [r[1] for r in results]
     
-    ci_lower, ci_upper = stats.norm.interval(
-        0.95, 
-        loc=np.mean(failures), 
-        scale=stats.sem(failures)
-    )
-    
     return {
         'Average Failures': np.mean(failures),
         'Median Failures': np.median(failures),
         'Max Failures': np.max(failures),
         'Std Dev Failures': np.std(failures),
         'Probability Systemic Event': np.mean(systemic_events),
-        '95% CI Lower': ci_lower,
-        '95% CI Upper': ci_upper,
         'Raw Failures': failures
     }
 
 # Sidebar for parameters
 st.sidebar.header("📊 Simulation Parameters")
 
-# File upload
-uploaded_file = st.sidebar.file_uploader(
-    "Upload Bank Data CSV", 
-    type=['csv'],
-    help="Upload a CSV file with bank data or use sample data"
-)
-
-if uploaded_file is not None:
-    try:
-        data = pd.read_csv(uploaded_file)
-        st.sidebar.success("✅ Data loaded successfully!")
-    except Exception as e:
-        st.sidebar.error(f"❌ Error loading file: {str(e)}")
-        data = load_sample_data()
-else:
-    data = load_sample_data()
-    st.sidebar.info("ℹ️ Using sample data")
+# Load bank data
+data = load_bank_data()
+st.sidebar.success(f"✅ Loaded {len(data)} banks from banks_data.csv")
 
 # Simulation parameters
 st.sidebar.subheader("Simulation Settings")
@@ -224,16 +199,6 @@ n_sim = st.sidebar.selectbox(
     index=1,
     help="More simulations = more accurate results but longer runtime"
 )
-
-systemic_threshold = st.sidebar.number_input(
-    "Systemic Event Threshold",
-    min_value=1,
-    max_value=len(data),
-    value=3,
-    help="Minimum number of bank failures to constitute a systemic event"
-)
-
-st.session_state['systemic_threshold'] = systemic_threshold
 
 # Model parameters
 st.sidebar.subheader("Model Parameters")
@@ -357,25 +322,20 @@ with tab1:
         
         results_df = pd.DataFrame({
             'Metric': ['Average Failures', 'Median Failures', 'Maximum Failures', 
-                      'Standard Deviation', 'Systemic Event Probability (%)', 
-                      '95% CI Lower', '95% CI Upper'],
+                      'Standard Deviation', 'Systemic Event Probability (%)'],
             'Traditional': [
                 f"{trad_summary['Average Failures']:.4f}",
                 f"{trad_summary['Median Failures']:.1f}",
                 f"{trad_summary['Max Failures']:.0f}",
                 f"{trad_summary['Std Dev Failures']:.4f}",
-                f"{trad_summary['Probability Systemic Event']*100:.2f}%",
-                f"{trad_summary['95% CI Lower']:.4f}",
-                f"{trad_summary['95% CI Upper']:.4f}"
+                f"{trad_summary['Probability Systemic Event']*100:.2f}%"
             ],
             'Blockchain': [
                 f"{bc_summary['Average Failures']:.4f}",
                 f"{bc_summary['Median Failures']:.1f}",
                 f"{bc_summary['Max Failures']:.0f}",
                 f"{bc_summary['Std Dev Failures']:.4f}",
-                f"{bc_summary['Probability Systemic Event']*100:.2f}%",
-                f"{bc_summary['95% CI Lower']:.4f}",
-                f"{bc_summary['95% CI Upper']:.4f}"
+                f"{bc_summary['Probability Systemic Event']*100:.2f}%"
             ]
         })
         
