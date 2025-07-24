@@ -232,7 +232,7 @@ def calculate_summary_statistics(simulation_results_list):
     }
 
 # Create sidebar for user inputs and controls
-st.sidebar.header("Bank Simulation Parameters")
+st.sidebar.header("Simulation Parameters")
 
 # Load the banking data from file
 banking_data = load_banking_data_from_file()
