@@ -167,7 +167,6 @@ def summarize_results(results):
     
     return {
         'Average Failures': np.mean(failures),
-        'Median Failures': np.median(failures),
         'Max Failures': np.max(failures),
         'Std Dev Failures': np.std(failures),
         'Probability Systemic Event': np.mean(systemic_events),
@@ -324,18 +323,16 @@ with tab1:
         st.subheader("📋 Detailed Comparison")
         
         results_df = pd.DataFrame({
-            'Metric': ['Average Failures', 'Median Failures', 'Maximum Failures', 
+            'Metric': ['Average Failures', 'Maximum Failures', 
                       'Standard Deviation', 'Systemic Event Probability (%)'],
             'Traditional': [
                 f"{trad_summary['Average Failures']:.4f}",
-                f"{trad_summary['Median Failures']:.1f}",
                 f"{trad_summary['Max Failures']:.0f}",
                 f"{trad_summary['Std Dev Failures']:.4f}",
                 f"{trad_summary['Probability Systemic Event']*100:.2f}%"
             ],
             'Blockchain': [
                 f"{bc_summary['Average Failures']:.4f}",
-                f"{bc_summary['Median Failures']:.1f}",
                 f"{bc_summary['Max Failures']:.0f}",
                 f"{bc_summary['Std Dev Failures']:.4f}",
                 f"{bc_summary['Probability Systemic Event']*100:.2f}%"
