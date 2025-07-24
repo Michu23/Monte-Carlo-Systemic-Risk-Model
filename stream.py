@@ -279,7 +279,7 @@ with tab1:
         # Display key metrics
         st.subheader("📊 Key Results")
         
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3, col4, col5 = st.columns(5)
         
         with col1:
             improvement = (1 - bc_summary['Average Failures'] / trad_summary['Average Failures']) * 100 if trad_summary['Average Failures'] > 0 else 0
@@ -291,15 +291,18 @@ with tab1:
             )
         
         with col2:
-            max_improvement = trad_summary['Max Failures'] - bc_summary['Max Failures']
             st.metric(
-                "Maximum Failures",
-                f"{bc_summary['Max Failures']:.0f}",
-                delta=f"-{max_improvement:.0f}",
-                delta_color="inverse"
+                "Traditional Max Failures",
+                f"{trad_summary['Max Failures']:.0f}"
             )
         
         with col3:
+            st.metric(
+                "Blockchain Max Failures", 
+                f"{bc_summary['Max Failures']:.0f}"
+            )
+        
+        with col4:
             systemic_improvement = (1 - bc_summary['Probability Systemic Event'] / trad_summary['Probability Systemic Event']) * 100 if trad_summary['Probability Systemic Event'] > 0 else 0
             st.metric(
                 "Systemic Event Probability",
@@ -308,7 +311,7 @@ with tab1:
                 delta_color="inverse"
             )
         
-        with col4:
+        with col5:
             volatility_improvement = (1 - bc_summary['Std Dev Failures'] / trad_summary['Std Dev Failures']) * 100 if trad_summary['Std Dev Failures'] > 0 else 0
             st.metric(
                 "Volatility (Std Dev)",
