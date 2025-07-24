@@ -232,7 +232,7 @@ def calculate_summary_statistics(simulation_results_list):
     }
 
 # Create sidebar for user inputs and controls
-st.sidebar.header("📊 Project: Baby's Project")
+st.sidebar.header("Bank Simulation Parameters")
 
 # Load the banking data from file
 banking_data = load_banking_data_from_file()
@@ -257,7 +257,7 @@ initial_shock_percentage = st.sidebar.slider(
 # Dropdown for number of simulations to run
 number_of_simulations_to_run = st.sidebar.selectbox(
     "Number of Simulations",
-    options=[50000, 100000, 200000, 500000, 1000000],
+    options=[500, 1000, 2000, 5000, 10000],
     index=1,
     help="More simulations = more accurate results but longer runtime"
 )
@@ -277,7 +277,7 @@ with column2:
     blockchain_loss_rate = st.number_input("Blockchain LGD", value=0.3, min_value=0.1, max_value=1.0, step=0.05)
 
 # Create main content tabs
-results_tab, data_overview_tab = st.tabs(["📈 Results", "📊😭 Data Overview"])
+results_tab, data_overview_tab = st.tabs(["📈 Results", "📊 Data Overview"])
 
 # Data Overview Tab - show the banking data
 with data_overview_tab:
@@ -341,258 +341,21 @@ with results_tab:
         # Step 3: Calculate summary statistics from simulation results
         traditional_summary_stats = calculate_summary_statistics(traditional_simulation_results)
         blockchain_summary_stats = calculate_summary_statistics(blockchain_simulation_results)
+        
+        # Step 4: Display key results in metric cards
+        st.subheader("Key Results")
 
-        # Step 3.5: Comprehensive Failure Impact Analysis
-        st.subheader("🔍 Absolute Failure Impact Analysis")
-
-        # Get failure data for analysis
+        # Calculate additional metrics for crisis reduction and potential savings
         traditional_failure_counts = [result[0] for result in traditional_simulation_results]
         blockchain_failure_counts = [result[0] for result in blockchain_simulation_results]
-
-        # Calculate total absolute failures across ALL simulations
+        traditional_systemic_count = sum([result[1] for result in traditional_simulation_results])
+        blockchain_systemic_count = sum([result[1] for result in blockchain_simulation_results])
         total_traditional_failures = sum(traditional_failure_counts)
         total_blockchain_failures = sum(blockchain_failure_counts)
 
-        # Calculate systemic crisis counts
-        traditional_systemic_count = sum([result[1] for result in traditional_simulation_results])
-        blockchain_systemic_count = sum([result[1] for result in blockchain_simulation_results])
+        # Create three columns for key metrics
+        metric_col1, metric_col2, metric_col3 = st.columns(3)
 
-        # Show dramatic impact comparison at the top
-        st.subheader("🚨 System Impact Comparison")
-
-        impact_col1, impact_col2, impact_col3 = st.columns(3)
-
-        with impact_col1:
-            st.metric(
-                "Total Bank Failures",
-                f"Traditional: {total_traditional_failures:,}",
-                help="Total number of bank failures across all simulations"
-            )
-            st.metric(
-                "Blockchain Failures",
-                f"{total_blockchain_failures:,}",
-                delta=f"-{total_traditional_failures - total_blockchain_failures:,} fewer",
-                delta_color="inverse"
-            )
-
-        with impact_col2:
-            failure_reduction = ((total_traditional_failures - total_blockchain_failures) / total_traditional_failures * 100) if total_traditional_failures > 0 else 0
-            st.metric(
-                "Failure Reduction",
-                f"{failure_reduction:.1f}%",
-                help="How much blockchain reduces total failures"
-            )
-            
-            crisis_reduction = ((traditional_systemic_count - blockchain_systemic_count) / traditional_systemic_count * 100) if traditional_systemic_count > 0 else 0
-            st.metric(
-                "Crisis Reduction",
-                f"{crisis_reduction:.1f}%",
-                help="How much blockchain reduces systemic crises"
-            )
-
-        with impact_col3:
-            st.metric(
-                "Systemic Crises Prevented",
-                f"{traditional_systemic_count - blockchain_systemic_count:,}",
-                help="Number of major financial crises prevented by blockchain"
-            )
-            
-            avg_failure_rate_traditional = total_traditional_failures / len(traditional_failure_counts)
-            avg_failure_rate_blockchain = total_blockchain_failures / len(blockchain_failure_counts)
-            st.metric(
-                "Avg Failures per Simulation",
-                f"Traditional: {avg_failure_rate_traditional:.2f}",
-            )
-            st.metric(
-                "Blockchain",
-                f"{avg_failure_rate_blockchain:.2f}",
-                delta=f"-{avg_failure_rate_traditional - avg_failure_rate_blockchain:.2f}",
-                delta_color="inverse"
-            )
-
-        # Detailed breakdown in expandable section
-        with st.expander("📊 Detailed Absolute Failure Breakdown"):
-            
-            breakdown_col1, breakdown_col2 = st.columns(2)
-            
-            # TRADITIONAL BANKING DETAILED BREAKDOWN
-            with breakdown_col1:
-                st.subheader("🏛️ Traditional Banking Impact")
-                
-                # Calculate failure statistics
-                zero_failures_traditional = traditional_failure_counts.count(0)
-                some_failures_traditional = len(traditional_failure_counts) - zero_failures_traditional
-                
-                st.write("**Absolute Impact Numbers:**")
-                st.write(f"- **Total simulations run:** {len(traditional_failure_counts):,}")
-                st.write(f"- **Total bank failures:** {total_traditional_failures:,}")
-                st.write(f"- **Systemic crises:** {traditional_systemic_count:,}")
-                st.write(f"- **Simulations with failures:** {some_failures_traditional:,}")
-                st.write(f"- **Simulations with no failures:** {zero_failures_traditional:,}")
-                st.write(f"- **Maximum failures in one simulation:** {max(traditional_failure_counts):,}")
-                
-                # Show severity distribution
-                st.write("**Failure Severity Distribution:**")
-                severity_data_traditional = {
-                    "No failures (0)": traditional_failure_counts.count(0),
-                    "Minor crisis (1-2)": sum(1 for x in traditional_failure_counts if 1 <= x <= 2),
-                    "Systemic crisis (3+)": sum(1 for x in traditional_failure_counts if x >= 3),
-                }
-                
-                for severity, count in severity_data_traditional.items():
-                    percentage = (count / len(traditional_failure_counts)) * 100
-                    st.write(f"- **{severity}:** {count:,} simulations ({percentage:.1f}%)")
-            
-            # BLOCKCHAIN BANKING DETAILED BREAKDOWN
-            with breakdown_col2:
-                st.subheader("⛓️ Blockchain Banking Impact")
-                
-                # Calculate failure statistics
-                zero_failures_blockchain = blockchain_failure_counts.count(0)
-                some_failures_blockchain = len(blockchain_failure_counts) - zero_failures_blockchain
-                
-                st.write("**Absolute Impact Numbers:**")
-                st.write(f"- **Total simulations run:** {len(blockchain_failure_counts):,}")
-                st.write(f"- **Total bank failures:** {total_blockchain_failures:,}")
-                st.write(f"- **Systemic crises:** {blockchain_systemic_count:,}")
-                st.write(f"- **Simulations with failures:** {some_failures_blockchain:,}")
-                st.write(f"- **Simulations with no failures:** {zero_failures_blockchain:,}")
-                st.write(f"- **Maximum failures in one simulation:** {max(blockchain_failure_counts):,}")
-                
-                # Show severity distribution
-                st.write("**Failure Severity Distribution:**")
-                severity_data_blockchain = {
-                    "No failures (0)": blockchain_failure_counts.count(0),
-                    "Minor crisis (1-2)": sum(1 for x in blockchain_failure_counts if 1 <= x <= 2),
-                    "Systemic crisis (3+)": sum(1 for x in blockchain_failure_counts if x >= 3),
-                }
-                
-                for severity, count in severity_data_blockchain.items():
-                    percentage = (count / len(blockchain_failure_counts)) * 100
-                    st.write(f"- **{severity}:** {count:,} simulations ({percentage:.1f}%)")
-
-        # Absolute Failure Frequency Comparison
-        st.subheader("📈 Absolute Failure Frequency Analysis")
-
-        # Create comprehensive comparison table showing absolute numbers
-        max_failures_overall = max(max(traditional_failure_counts), max(blockchain_failure_counts))
-        comparison_data = []
-
-        # Calculate absolute frequencies for each failure count
-        for failure_count in range(min(max_failures_overall + 1, 25)):  # Limit to 25 for readability
-            trad_absolute = traditional_failure_counts.count(failure_count)
-            bc_absolute = blockchain_failure_counts.count(failure_count)
-            absolute_difference = trad_absolute - bc_absolute
-            
-            # Calculate what this means in terms of total bank failures
-            total_failures_traditional_this_level = failure_count * trad_absolute
-            total_failures_blockchain_this_level = failure_count * bc_absolute
-            bank_failures_prevented = total_failures_traditional_this_level - total_failures_blockchain_this_level
-            
-            comparison_data.append({
-                'Failures per Simulation': failure_count,
-                'Traditional Simulations': f"{trad_absolute:,}",
-                'Blockchain Simulations': f"{bc_absolute:,}",
-                'Difference (Trad - BC)': f"{absolute_difference:,}",
-                'Total Bank Failures (Traditional)': f"{total_failures_traditional_this_level:,}",
-                'Total Bank Failures (Blockchain)': f"{total_failures_blockchain_this_level:,}",
-                'Bank Failures Prevented': f"{bank_failures_prevented:,}"
-            })
-
-        comparison_df = pd.DataFrame(comparison_data)
-        st.dataframe(comparison_df, use_container_width=True)
-
-        # Highlight key insights
-        st.subheader("💡 Key Insights from Absolute Numbers")
-
-        insights_col1, insights_col2 = st.columns(2)
-
-        with insights_col1:
-            st.write("**🚨 Traditional Banking Risks:**")
-            worst_case_traditional = max(traditional_failure_counts)
-            frequent_failures_traditional = sum(1 for x in traditional_failure_counts if x >= 1)
-            st.write(f"- In worst case: **{worst_case_traditional} banks failed** in single crisis")
-            st.write(f"- Failures occurred in **{frequent_failures_traditional:,} simulations**")
-            st.write(f"- Average of **{avg_failure_rate_traditional:.2f} bank failures** per simulation")
-            st.write(f"- **{traditional_systemic_count:,} major systemic crises** occurred")
-
-        with insights_col2:
-            st.write("**✅ Blockchain Banking Stability:**")
-            worst_case_blockchain = max(blockchain_failure_counts)
-            frequent_failures_blockchain = sum(1 for x in blockchain_failure_counts if x >= 1)
-            st.write(f"- In worst case: **{worst_case_blockchain} banks failed** in single crisis")
-            st.write(f"- Failures occurred in **{frequent_failures_blockchain:,} simulations**")
-            st.write(f"- Average of **{avg_failure_rate_blockchain:.2f} bank failures** per simulation")
-            st.write(f"- **{blockchain_systemic_count:,} major systemic crises** occurred")
-
-        # Financial Impact Estimation
-        st.subheader("💰 Estimated Financial Impact")
-
-        # Assume average bank has €50B in assets (you can adjust this)
-        avg_bank_assets = banking_data['Total Assets (€B)'].mean()
-
-        traditional_financial_impact = total_traditional_failures * avg_bank_assets
-        blockchain_financial_impact = total_blockchain_failures * avg_bank_assets
-        financial_savings = traditional_financial_impact - blockchain_financial_impact
-
-        impact_metric_col1, impact_metric_col2, impact_metric_col3 = st.columns(3)
-
-        with impact_metric_col1:
-            st.metric(
-                "Traditional System Cost",
-                f"€{traditional_financial_impact:,.0f}B",
-                help="Estimated total assets at risk from failed banks"
-            )
-
-        with impact_metric_col2:
-            st.metric(
-                "Blockchain System Cost",
-                f"€{blockchain_financial_impact:,.0f}B",
-                help="Estimated total assets at risk from failed banks"
-            )
-
-        with impact_metric_col3:
-            st.metric(
-                "Potential Savings",
-                f"€{financial_savings:,.0f}B",
-                delta=f"€{financial_savings:,.0f}B saved",
-                delta_color="inverse",
-                help="Financial losses prevented by blockchain banking"
-            )
-
-        # Sample specific simulation results
-        st.subheader("🔍 Sample Simulation Results")
-
-        sample_col1, sample_col2 = st.columns(2)
-
-        with sample_col1:
-            st.write("**Traditional Banking - First 10 Simulations:**")
-            for i in range(min(10, len(traditional_simulation_results))):
-                failures, is_systemic, failed_banks = traditional_simulation_results[i]
-                if is_systemic:
-                    st.write(f"🚨 **Simulation {i+1}: {failures} banks failed - SYSTEMIC CRISIS**")
-                elif failures > 0:
-                    st.write(f"⚠️ Simulation {i+1}: {failures} banks failed")
-                else:
-                    st.write(f"✅ Simulation {i+1}: {failures} banks failed")
-
-        with sample_col2:
-            st.write("**Blockchain Banking - First 10 Simulations:**")
-            for i in range(min(10, len(blockchain_simulation_results))):
-                failures, is_systemic, failed_banks = blockchain_simulation_results[i]
-                if is_systemic:
-                    st.write(f"🚨 **Simulation {i+1}: {failures} banks failed - SYSTEMIC CRISIS**")
-                elif failures > 0:
-                    st.write(f"⚠️ Simulation {i+1}: {failures} banks failed")
-                else:
-                    st.write(f"✅ Simulation {i+1}: {failures} banks failed")
-        
-        # Step 4: Display key results in metric cards
-        st.subheader("📊 Key Results")
-        
-        # Create five columns for key metrics
-        metric_col1, metric_col2, metric_col3, metric_col4, metric_col5 = st.columns(5)
-        
         # Show average failures with improvement percentage
         with metric_col1:
             # Calculate improvement percentage for blockchain vs traditional
@@ -607,7 +370,7 @@ with results_tab:
                 delta=f"-{failure_improvement_percentage:.1f}%",
                 delta_color="inverse"
             )
-        
+
         # Show systemic crisis probability with improvement
         with metric_col2:
             # Calculate improvement in systemic crisis probability
@@ -622,7 +385,7 @@ with results_tab:
                 delta=f"-{systemic_improvement_percentage:.1f}%",
                 delta_color="inverse"
             )
-        
+
         # Show volatility (standard deviation) with improvement
         with metric_col3:
             # Calculate improvement in volatility
@@ -640,25 +403,31 @@ with results_tab:
         
         # Step 5: Create detailed comparison table
         st.subheader("📋 Detailed Comparison")
-        
-        # Create dataframe with detailed results
+
+        # Calculate absolute failure counts
+        traditional_failure_counts = [result[0] for result in traditional_simulation_results]
+        blockchain_failure_counts = [result[0] for result in blockchain_simulation_results]
+        total_traditional_failures = sum(traditional_failure_counts)
+        total_blockchain_failures = sum(blockchain_failure_counts)
+
+        # Create dataframe with detailed results including absolute failure counts
         detailed_comparison_table = pd.DataFrame({
-            'Metric': ['Average Failures', 'Maximum Failures', 
-                      'Standard Deviation', 'Systemic Event Probability (%)'],
+            'Metric': ['Average Failures', 'Absolute Failure Count', 
+                    'Standard Deviation', 'Systemic Event Probability (%)'],
             'Traditional': [
                 f"{traditional_summary_stats['Average Failures']:.4f}",
-                f"{traditional_summary_stats['Max Failures']:.0f}",
+                f"{total_traditional_failures:,}",
                 f"{traditional_summary_stats['Std Dev Failures']:.4f}",
                 f"{traditional_summary_stats['Probability Systemic Event']*100:.2f}%"
             ],
             'Blockchain': [
                 f"{blockchain_summary_stats['Average Failures']:.4f}",
-                f"{blockchain_summary_stats['Max Failures']:.0f}",
+                f"{total_blockchain_failures:,}",
                 f"{blockchain_summary_stats['Std Dev Failures']:.4f}",
                 f"{blockchain_summary_stats['Probability Systemic Event']*100:.2f}%"
             ]
         })
-        
+
         # Display the comparison table
         st.dataframe(detailed_comparison_table, use_container_width=True)
         
@@ -668,94 +437,67 @@ with results_tab:
         # Get failure data for creating charts
         traditional_failure_counts = traditional_summary_stats['Raw Failures']
         blockchain_failure_counts = blockchain_summary_stats['Raw Failures']
-        
-        # Create interactive plots using Plotly
-        # Set up subplot structure (2 rows, 2 columns)
-        visualization_figure = make_subplots(
-            rows=2, cols=2,
-            subplot_titles=('Distribution of Bank Failures', 'Cumulative Probability', 
-                          'Box Plot Comparison', 'Systemic Event Probability'),
-            specs=[[{"secondary_y": False}, {"secondary_y": False}],
-                   [{"secondary_y": False}, {"secondary_y": False}]]
-        )
-        
-        # Chart 1: Histogram showing distribution of failures
+
+        # Chart 1: Distribution of Bank Failures (Histogram) - TOP
+        st.subheader("Distribution of Bank Failures")
+
+        # Create histogram figure
+        histogram_figure = go.Figure()
+
+        # Calculate bins for histogram
         maximum_failures_observed = int(max(max(traditional_failure_counts), max(blockchain_failure_counts)))
-        number_of_histogram_bins = min(maximum_failures_observed + 1, 50)  # Limit bins for better display
-        
+        number_of_histogram_bins = min(maximum_failures_observed + 1, 50)
+
         # Add traditional banking histogram
-        visualization_figure.add_trace(
+        histogram_figure.add_trace(
             go.Histogram(x=traditional_failure_counts, name='Traditional', opacity=0.7, 
-                        nbinsx=number_of_histogram_bins, histnorm='probability'),
-            row=1, col=1
+                        nbinsx=number_of_histogram_bins, histnorm='probability')
         )
-        
+
         # Add blockchain banking histogram
-        visualization_figure.add_trace(
+        histogram_figure.add_trace(
             go.Histogram(x=blockchain_failure_counts, name='Blockchain', opacity=0.7,
-                        nbinsx=number_of_histogram_bins, histnorm='probability'),
-            row=1, col=1
+                        nbinsx=number_of_histogram_bins, histnorm='probability')
         )
-        
-        # Chart 2: Cumulative distribution function (ECDF)
-        # Sort the failure data for cumulative plots
-        traditional_failures_sorted = np.sort(traditional_failure_counts)
-        blockchain_failures_sorted = np.sort(blockchain_failure_counts)
-        
-        # Calculate cumulative probabilities
-        traditional_cumulative_probabilities = np.arange(1, len(traditional_failures_sorted)+1) / len(traditional_failures_sorted)
-        blockchain_cumulative_probabilities = np.arange(1, len(blockchain_failures_sorted)+1) / len(blockchain_failures_sorted)
-        
-        # Add traditional ECDF line
-        visualization_figure.add_trace(
-            go.Scatter(x=traditional_failures_sorted, y=traditional_cumulative_probabilities, 
-                      mode='lines', name='Traditional ECDF'),
-            row=1, col=2
+
+        # Update layout for histogram
+        histogram_figure.update_layout(
+            xaxis_title="Number of Failures",
+            yaxis_title="Probability",
+            height=400,
+            showlegend=True
         )
-        
-        # Add blockchain ECDF line
-        visualization_figure.add_trace(
-            go.Scatter(x=blockchain_failures_sorted, y=blockchain_cumulative_probabilities, 
-                      mode='lines', name='Blockchain ECDF'),
-            row=1, col=2
+
+        # Display histogram
+        st.plotly_chart(histogram_figure, use_container_width=True)
+
+        # Chart 2: Systemic Event Probability (Bar Chart) - BOTTOM
+        st.subheader("Systemic Event Probability")
+
+        # Create bar chart figure
+        bar_figure = go.Figure()
+
+        # Add bar chart comparing systemic event probabilities
+        bar_figure.add_trace(
+            go.Bar(
+                x=['Traditional', 'Blockchain'], 
+                y=[traditional_summary_stats['Probability Systemic Event']*100, 
+                blockchain_summary_stats['Probability Systemic Event']*100],
+                name='Systemic Event %',
+                marker_color=['#ef553b', '#00cc96']  # Red for traditional, green for blockchain
+            )
         )
-        
-        # Chart 3: Box plots for comparison
-        # Add traditional banking box plot
-        visualization_figure.add_trace(
-            go.Box(y=traditional_failure_counts, name='Traditional', boxpoints='outliers'),
-            row=2, col=1
+
+        # Update layout for bar chart
+        bar_figure.update_layout(
+            xaxis_title="System Type",
+            yaxis_title="Probability (%)",
+            height=400,
+            showlegend=False
         )
-        
-        # Add blockchain banking box plot
-        visualization_figure.add_trace(
-            go.Box(y=blockchain_failure_counts, name='Blockchain', boxpoints='outliers'),
-            row=2, col=1
-        )
-        
-        # Chart 4: Bar chart comparing systemic event probabilities
-        visualization_figure.add_trace(
-            go.Bar(x=['Traditional', 'Blockchain'], 
-                  y=[traditional_summary_stats['Probability Systemic Event']*100, 
-                     blockchain_summary_stats['Probability Systemic Event']*100],
-                  name='Systemic Event %'),
-            row=2, col=2
-        )
-        
-        # Update axis labels for better understanding
-        visualization_figure.update_xaxes(title_text="Number of Failures", row=1, col=1)
-        visualization_figure.update_yaxes(title_text="Probability", row=1, col=1)
-        visualization_figure.update_xaxes(title_text="Number of Failures", row=1, col=2)
-        visualization_figure.update_yaxes(title_text="Cumulative Probability", row=1, col=2)
-        visualization_figure.update_yaxes(title_text="Number of Failures", row=2, col=1)
-        visualization_figure.update_xaxes(title_text="System Type", row=2, col=2)
-        visualization_figure.update_yaxes(title_text="Probability (%)", row=2, col=2)
-        
-        # Set overall figure properties
-        visualization_figure.update_layout(height=800, showlegend=True, title_text="Simulation Results Comparison")
-        
-        # Display the interactive charts
-        st.plotly_chart(visualization_figure, use_container_width=True)
+
+        # Display bar chart
+        st.plotly_chart(bar_figure, use_container_width=True)
         
         # Step 7: Provide download option for results
         st.subheader("💾 Download Results")
