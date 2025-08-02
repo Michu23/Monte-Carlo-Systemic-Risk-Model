@@ -1,0 +1,121 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=staging
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend-staging.rule=Host(`staging.yourdomain.com`)"
+      - "traefik.http.routers.frontend-staging.tls=true"
+      - "traefik.http.routers.frontend-staging.tls.certresolver=letsencrypt"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    ports:
+      - "5001:5001"
+    environment:
+      - FLASK_ENV=staging
+      - DATABASE_URL=postgresql://staging_user:staging_pass@db:5432/staging_db
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${STAGING_SECRET_KEY}
+      - JWT_SECRET_KEY=${STAGING_JWT_SECRET_KEY}
+      - SENTRY_DSN=${STAGING_SENTRY_DSN}
+      - LOG_LEVEL=DEBUG
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+    volumes:
+      - ./logs/staging:/var/log/systemic-risk
+      - ./uploads/staging:/app/uploads
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend-staging.rule=Host(`staging-api.yourdomain.com`)"
+      - "traefik.http.routers.backend-staging.tls=true"
+      - "traefik.http.routers.backend-staging.tls.certresolver=letsencrypt"
+
+  db:
+    image: postgres:14-alpine
+    environment:
+      - POSTGRES_DB=staging_db
+      - POSTGRES_USER=staging_user
+      - POSTGRES_PASSWORD=staging_pass
+    volumes:
+      - postgres_staging_data:/var/lib/postgresql/data
+      - ./backup/staging:/backup
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_staging_data:/data
+    command: redis-server --appendonly yes
+
+  celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    command: celery -A app.celery worker --loglevel=debug
+    environment:
+      - FLASK_ENV=staging
+      - DATABASE_URL=postgresql://staging_user:staging_pass@db:5432/staging_db
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${STAGING_SECRET_KEY}
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+    volumes:
+      - ./logs/staging:/var/log/systemic-risk
+
+  # Monitoring and logging
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    restart: unless-stopped
+
+volumes:
+  postgres_staging_data:
+  redis_staging_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  default:
+    driver: bridge
